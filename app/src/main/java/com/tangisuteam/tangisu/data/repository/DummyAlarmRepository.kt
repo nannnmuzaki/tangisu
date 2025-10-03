@@ -22,23 +22,18 @@ class DummyAlarmRepositoryImpl : AlarmRepository {
         // Initial dummy data
         listOf(
             Alarm(
-                hour = 7, minute = 0,
-                label = "Morning Workout",
-                daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
+                hour = 4, minute = 0,
+                label = "Nguli-ah",
+                isEnabled = false,
+                daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY),
                 challengeType = ChallengeType.MATH
             ),
             Alarm(
-                hour = 22, minute = 30,
-                label = "Bedtime Reading",
+                hour = 13, minute = 55,
+                label = "Kelas King",
                 isEnabled = false,
                 daysOfWeek = emptySet(),
                 timeFormatPreference = TimeFormatSetting.H12
-            ),
-            Alarm(
-                hour = 9, minute = 15,
-                label = null,
-                daysOfWeek = setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY),
-                shouldVibrate = false
             )
         )
     )

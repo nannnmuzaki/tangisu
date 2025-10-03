@@ -13,27 +13,32 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel // For easy ViewModel instantiation
 import com.tangisuteam.tangisu.data.model.Alarm
 import com.tangisuteam.tangisu.data.model.ChallengeType
 import com.tangisuteam.tangisu.data.model.DayOfWeek
 import com.tangisuteam.tangisu.ui.theme.TangisuTheme
+import android.app.Application
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.tangisuteam.tangisu.data.repository.DummyAlarmRepositoryProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmListScreen(
     // ViewModel is provided with a default instance using the dummy repository
-    alarmViewModel: AlarmViewModel = viewModel(),
-    // Callbacks for navigation - to be implemented with your navigation solution
+    alarmListViewModel: AlarmListViewModel = viewModel(
+        factory = AlarmListViewModelFactory(
+            application = LocalContext.current.applicationContext as Application,
+            alarmRepository = DummyAlarmRepositoryProvider.instance
+        )
+    ),
     onNavigateToAddAlarm: () -> Unit,
     onNavigateToEditAlarm: (alarmId: String) -> Unit
 ) {
     // Collect the alarms StateFlow from the ViewModel
-    val alarms by alarmViewModel.alarms.collectAsState()
+    val alarms by alarmListViewModel.alarms.collectAsState()
     val isSystem24Hour = DateFormat.is24HourFormat(LocalContext.current)
 
     TangisuTheme {
@@ -71,7 +76,7 @@ fun AlarmListScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues), // Apply padding from Scaffold
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(alarms, key = { alarm -> alarm.id }) { alarm ->
@@ -79,10 +84,10 @@ fun AlarmListScreen(
                             alarm = alarm,
                             isSystem24HourFormat = isSystem24Hour,
                             onEnabledChange = { isEnabled ->
-                                alarmViewModel.onAlarmEnabledChanged(alarm, isEnabled)
+                                alarmListViewModel.onAlarmEnabledChanged(alarm, isEnabled)
                             },
                             onDeleteClick = {
-                                alarmViewModel.deleteAlarm(alarm.id)
+                                alarmListViewModel.deleteAlarm(alarm.id)
                             },
                             onClick = {
                                 onNavigateToEditAlarm(alarm.id)

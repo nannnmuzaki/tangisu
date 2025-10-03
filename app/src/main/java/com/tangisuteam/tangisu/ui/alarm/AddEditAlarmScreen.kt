@@ -1,5 +1,6 @@
 package com.tangisuteam.tangisu.ui.alarm
 
+import android.app.Application
 import android.text.format.DateFormat // For system 24hr format check
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -33,6 +34,7 @@ fun AddEditAlarmScreen(
     onNavigateBack: () -> Unit,
     viewModel: AddEditAlarmViewModel = viewModel(
         factory = AddEditAlarmViewModelFactory(
+            application = LocalContext.current.applicationContext as Application,
             alarmRepository = com.tangisuteam.tangisu.data.repository.DummyAlarmRepositoryProvider.instance,
             savedStateHandle = SavedStateHandle()
         )
@@ -140,18 +142,19 @@ fun AddEditAlarmScreen(
             ) {
 
                 // 1. Time Display Button (Shows Time Picker Dialog)
-                OutlinedButton(
+                FilledTonalButton(
                     onClick = { showTimePickerDialog = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
                         // Use the helper from ViewModel for accurate display based on preference
                         text = viewModel.getFormattedDisplayTime(isSystem24Hour),
-                        style = MaterialTheme.typography.headlineMedium
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.padding(vertical = 16.dp)
                     )
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(2.dp))
 
                 // 2. Label
                 OutlinedTextField(
@@ -169,7 +172,6 @@ fun AddEditAlarmScreen(
                 )
 
                 // 3. Days of Week Selector (Using FilterChip)
-                Text("Repeat", style = MaterialTheme.typography.titleMedium)
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -184,21 +186,46 @@ fun AddEditAlarmScreen(
                     }
                 }
 
-                // 4. Enabled Switch
-                SettingRowSwitch(
-                    title = "Enable Alarm",
-                    checked = viewModel.isEnabled,
-                    onCheckedChange = { viewModel.onIsEnabledChange(it) }
-                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // 5. Vibration Switch
-                SettingRowSwitch(
-                    title = "Vibrate",
-                    checked = viewModel.shouldVibrate,
-                    onCheckedChange = { viewModel.onShouldVibrateChange(it) }
-                )
+                Text("Alarm Status", style = MaterialTheme.typography.titleMedium)
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        onClick = { viewModel.onIsEnabledChange(false) },
+                        selected = !viewModel.isEnabled
+                    ) {
+                        Text("Off")
+                    }
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        onClick = { viewModel.onIsEnabledChange(true) },
+                        selected = viewModel.isEnabled
+                    ) {
+                        Text("On")
+                    }
+                }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp)) // Renamed from Divider
+                // --- NEW Segmented Button for Vibration ---
+                Text("Vibration", style = MaterialTheme.typography.titleMedium)
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        onClick = { viewModel.onShouldVibrateChange(false) },
+                        selected = !viewModel.shouldVibrate
+                    ) {
+                        Text("Off")
+                    }
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        onClick = { viewModel.onShouldVibrateChange(true) },
+                        selected = viewModel.shouldVibrate
+                    ) {
+                        Text("On")
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
                 // --- Challenge Type (Using SegmentedButton) ---
                 Text("Dismiss Challenge", style = MaterialTheme.typography.titleMedium)
@@ -262,7 +289,6 @@ fun AddEditAlarmScreen(
     }
 }
 
-// Helper composable for rows with a title and a switch (stable)
 @Composable
 fun SettingRowSwitch(
     title: String,
@@ -275,7 +301,7 @@ fun SettingRowSwitch(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(title, style = MaterialTheme.typography.bodyLarge)
+        Text(title, style = MaterialTheme.typography.titleMedium)
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
@@ -289,16 +315,15 @@ fun SettingRowSwitch(
     }
 }
 
-// --- Preview ---
-// (Your existing preview code can remain, but ensure it uses the factory for the ViewModel)
 class AddEditAlarmViewModelFactory(
+    private val application: Application,
     private val alarmRepository: com.tangisuteam.tangisu.data.repository.AlarmRepository,
     private val savedStateHandle: SavedStateHandle
 ) : androidx.lifecycle.ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AddEditAlarmViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return AddEditAlarmViewModel(alarmRepository, savedStateHandle) as T
+            return AddEditAlarmViewModel(application, alarmRepository, savedStateHandle) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
@@ -311,9 +336,11 @@ fun AddAlarmScreenPreview() {
         AddEditAlarmScreen(
             alarmId = null,
             onNavigateBack = {},
-            viewModel = AddEditAlarmViewModel( // Use factory or direct instantiation for preview
-                com.tangisuteam.tangisu.data.repository.DummyAlarmRepositoryProvider.instance,
-                SavedStateHandle()
+            // This preview is already correct as it provides the Application context
+            viewModel = AddEditAlarmViewModel(
+                application = LocalContext.current.applicationContext as Application,
+                alarmRepository = com.tangisuteam.tangisu.data.repository.DummyAlarmRepositoryProvider.instance,
+                savedStateHandle = SavedStateHandle()
             )
         )
     }
@@ -323,16 +350,15 @@ fun AddAlarmScreenPreview() {
 @Composable
 fun EditAlarmScreenPreview() {
     TangisuTheme {
+        // Correct the ViewModel instantiation here by adding the Application context
         val previewViewModel = AddEditAlarmViewModel(
-            com.tangisuteam.tangisu.data.repository.DummyAlarmRepositoryProvider.instance,
-            SavedStateHandle(mapOf("alarmId" to "dummy-edit-id"))
+            application = LocalContext.current.applicationContext as Application,
+            alarmRepository = com.tangisuteam.tangisu.data.repository.DummyAlarmRepositoryProvider.instance,
+            savedStateHandle = SavedStateHandle(mapOf("alarmId" to "dummy-edit-id"))
         )
         // Simulate loading for edit mode preview
         LaunchedEffect(Unit) {
             previewViewModel.loadAlarm("dummy-edit-id") // Make sure dummy repo has this ID or handles null
-            // Or manually set properties for a richer preview if loadAlarm doesn't find a dummy one:
-            // previewViewModel.onTimeChange(10, 30)
-            // previewViewModel.onLabelChange("Preview Loaded Label")
         }
         AddEditAlarmScreen(
             alarmId = "dummy-edit-id",

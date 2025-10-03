@@ -14,7 +14,9 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.UUID
 import java.util.Locale
-import kotlin.text.format
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import com.tangisuteam.tangisu.alarm.AlarmScheduler
 
 // Define default values (consider moving to a companion object or constants file if widely used)
 private const val DEFAULT_HOUR = 7
@@ -22,9 +24,12 @@ private const val DEFAULT_MINUTE = 0
 private const val DEFAULT_SNOOZE_MINUTES = 10
 
 class AddEditAlarmViewModel(
+    application: Application,
     private val alarmRepository: AlarmRepository = DummyAlarmRepositoryProvider.instance, // Default for now
     private val savedStateHandle: SavedStateHandle // To get alarmId if using Jetpack Navigation args
-) : ViewModel() {
+) : AndroidViewModel(application) {
+
+    private val alarmScheduler = AlarmScheduler(application)
 
     // --- UI State ---
     var hour by mutableStateOf(DEFAULT_HOUR)
@@ -125,7 +130,6 @@ class AddEditAlarmViewModel(
                 daysOfWeek = daysOfWeek,
                 ringtoneUri = ringtoneUri,
                 shouldVibrate = shouldVibrate,
-                // vibrationPattern = vibrationPattern, // If using complex pattern
                 snoozeDurationMinutes = snoozeDurationMinutes,
                 challengeType = challengeType,
                 timeFormatPreference = timeFormatPreference
@@ -136,6 +140,13 @@ class AddEditAlarmViewModel(
             } else {
                 alarmRepository.insertAlarm(alarmToSave)
             }
+
+            if (alarmToSave.isEnabled) {
+                alarmScheduler.schedule(alarmToSave)
+            } else {
+                alarmScheduler.cancel(alarmToSave)
+            }
+
             _saveEvent.emit(Unit) // Signal successful save
         }
     }
