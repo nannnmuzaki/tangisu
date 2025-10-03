@@ -23,7 +23,7 @@ import com.tangisuteam.tangisu.ui.theme.TangisuTheme
 import android.app.Application
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tangisuteam.tangisu.data.repository.DummyAlarmRepositoryProvider
-
+import com.tangisuteam.tangisu.ui.components.PermissionHandler
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmListScreen(
@@ -42,57 +42,59 @@ fun AlarmListScreen(
     val isSystem24Hour = DateFormat.is24HourFormat(LocalContext.current)
 
     TangisuTheme {
-        Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = { Text("Tangisu たんぎす") },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                )
-            },
-            floatingActionButton = {
-                FloatingActionButton(onClick = onNavigateToAddAlarm) {
-                    Icon(Icons.Filled.Add, contentDescription = "Add new alarm")
-                }
-            }
-        ) { paddingValues ->
-            if (alarms.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues) // Apply padding from Scaffold
-                        .padding(16.dp), // Additional padding for content
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        "No alarms yet. Tap '+' to add one!",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues), // Apply padding from Scaffold
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(alarms, key = { alarm -> alarm.id }) { alarm ->
-                        AlarmItem(
-                            alarm = alarm,
-                            isSystem24HourFormat = isSystem24Hour,
-                            onEnabledChange = { isEnabled ->
-                                alarmListViewModel.onAlarmEnabledChanged(alarm, isEnabled)
-                            },
-                            onDeleteClick = {
-                                alarmListViewModel.deleteAlarm(alarm.id)
-                            },
-                            onClick = {
-                                onNavigateToEditAlarm(alarm.id)
-                            }
+        PermissionHandler {
+            Scaffold(
+                topBar = {
+                    CenterAlignedTopAppBar(
+                        title = { Text("Tangisu たんぎす") },
+                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimary
                         )
+                    )
+                },
+                floatingActionButton = {
+                    FloatingActionButton(onClick = onNavigateToAddAlarm) {
+                        Icon(Icons.Filled.Add, contentDescription = "Add new alarm")
+                    }
+                }
+            ) { paddingValues ->
+                if (alarms.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues) // Apply padding from Scaffold
+                            .padding(16.dp), // Additional padding for content
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "No alarms yet. Tap '+' to add one!",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues), // Apply padding from Scaffold
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(alarms, key = { alarm -> alarm.id }) { alarm ->
+                            AlarmItem(
+                                alarm = alarm,
+                                isSystem24HourFormat = isSystem24Hour,
+                                onEnabledChange = { isEnabled ->
+                                    alarmListViewModel.onAlarmEnabledChanged(alarm, isEnabled)
+                                },
+                                onDeleteClick = {
+                                    alarmListViewModel.deleteAlarm(alarm.id)
+                                },
+                                onClick = {
+                                    onNavigateToEditAlarm(alarm.id)
+                                }
+                            )
+                        }
                     }
                 }
             }

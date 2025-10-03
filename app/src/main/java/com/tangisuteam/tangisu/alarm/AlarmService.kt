@@ -89,7 +89,6 @@ class AlarmService : Service() {
                 val alarm = currentAlarmId?.let { DummyAlarmRepositoryProvider.instance.getAlarmById(it) }
                 if (alarm?.shouldVibrate == true) {
                     Log.d("AlarmService", "Starting vibration")
-                    // --- THIS IS THE CORRECTED CODE ---
                     // Create an effect for an insistent, repeating buzz
                     val vibrationEffect = VibrationEffect.createWaveform(
                         longArrayOf(0, 1000, 500), // Wait 0ms, Vibrate 1s, Wait 0.5s

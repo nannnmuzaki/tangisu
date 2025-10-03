@@ -15,8 +15,7 @@ class AlarmScheduler(private val context: Context) {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
     // Helper to check for permission
-    private fun canScheduleExactAlarms(): Boolean {
-        // ... (this function is correct)
+    fun canScheduleExactAlarms(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             alarmManager.canScheduleExactAlarms()
         } else {
@@ -30,7 +29,6 @@ class AlarmScheduler(private val context: Context) {
             return
         }
 
-        // --- THE KEY CHANGE IS HERE ---
         // Pass the alarm's daysOfWeek to the new getNextTriggerTime function
         val triggerTime = getNextTriggerTime(alarm.hour, alarm.minute, alarm.daysOfWeek)
 
@@ -73,7 +71,7 @@ class AlarmScheduler(private val context: Context) {
         Log.d("AlarmScheduler", "Cancelled alarm ${alarm.id}")
     }
 
-    // --- REWRITTEN getNextTriggerTime FUNCTION ---
+
     private fun getNextTriggerTime(hour: Int, minute: Int, repeatDays: Set<DayOfWeek>): Calendar {
         val now = Calendar.getInstance()
         val triggerTime = Calendar.getInstance().apply {
