@@ -20,7 +20,11 @@ import com.tangisuteam.tangisu.R
 import com.tangisuteam.tangisu.data.repository.DummyAlarmRepositoryProvider // Import repository
 import com.tangisuteam.tangisu.ui.alarm.AlarmActivity
 import kotlinx.coroutines.GlobalScope // Import CoroutineScope
-import kotlinx.coroutines.launch // Import launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 class AlarmService : Service() {
 
@@ -32,6 +36,9 @@ class AlarmService : Service() {
     private var currentAlarmId: String? = null
     private var currentAlarmLabel: String = "Time to wake up!"
     private var isStopping = false
+    private var hasStartedPlayback = false // <-- 1. ADD THIS FLAG
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
         const val ACTION_STOP_SERVICE = "com.tangisuteam.tangisu.STOP_ALARM_SERVICE"
@@ -58,41 +65,37 @@ class AlarmService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // --- HANDLE THE STOP ACTION ---
         if (intent?.action == ACTION_STOP_SERVICE) {
             Log.d("AlarmService", "Stop action received. Stopping service.")
             isStopping = true
-            stopSelf() // This will trigger onDestroy()
-            return START_NOT_STICKY // Don't restart
+            stopSelf()
+            return START_NOT_STICKY
         }
 
-        intent?.getStringExtra("ALARM_ID")?.let {
-            currentAlarmId = it
-        }
+        intent?.getStringExtra("ALARM_ID")?.let { currentAlarmId = it }
         intent?.getStringExtra("ALARM_LABEL")?.let {
             currentAlarmLabel = it.ifBlank { "Time to wake up!" }
         }
 
         Log.d("AlarmService", "Service started. Label: '$currentAlarmLabel', ID: '$currentAlarmId'")
 
-        // This ensures the notification is always present while the service is running
         startForeground(NOTIFICATION_ID, createNotification(currentAlarmId, currentAlarmLabel))
 
-        // --- START SOUND AND VIBRATION ---
-        // We only want to start them the first time, not on service restart
-        if (ringtone?.isPlaying == false) {
-            Log.d("AlarmService", "Starting media playback")
+        // --- IMPROVED PLAYBACK LOGIC ---
+        if (!hasStartedPlayback) {
+            hasStartedPlayback = true // Set the flag immediately
+            Log.d("AlarmService", "Starting media playback for the first time.")
+
             ringtone?.play()
 
-            // Fetch the specific alarm to check if it should vibrate
-            GlobalScope.launch {
+            // Use the new serviceScope
+            serviceScope.launch {
                 val alarm = currentAlarmId?.let { DummyAlarmRepositoryProvider.instance.getAlarmById(it) }
                 if (alarm?.shouldVibrate == true) {
                     Log.d("AlarmService", "Starting vibration")
-                    // Create an effect for an insistent, repeating buzz
                     val vibrationEffect = VibrationEffect.createWaveform(
-                        longArrayOf(0, 1000, 500), // Wait 0ms, Vibrate 1s, Wait 0.5s
-                        0 // Repeat from the start of the pattern (index 0)
+                        longArrayOf(0, 1000, 500),
+                        0
                     )
                     vibrator?.vibrate(vibrationEffect)
                 } else {
@@ -100,17 +103,17 @@ class AlarmService : Service() {
                 }
             }
         }
-
         return START_STICKY
     }
 
-    override fun onDestroy() {
+        override fun onDestroy() {
         super.onDestroy()
         isStopping = false
+        hasStartedPlayback = false // Reset the flag
         Log.d("AlarmService", "Service destroyed. Stopping ringtone and vibration.")
-        // --- STOP SOUND AND VIBRATION ---
         ringtone?.stop()
         vibrator?.cancel()
+        serviceScope.cancel() // <-- CANCEL THE SCOPE
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
