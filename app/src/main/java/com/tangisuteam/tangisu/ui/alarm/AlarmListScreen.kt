@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete // For delete icon
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,25 +15,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel // For easy ViewModel instantiation
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tangisuteam.tangisu.data.model.Alarm
 import com.tangisuteam.tangisu.data.model.ChallengeType
 import com.tangisuteam.tangisu.data.model.DayOfWeek
 import com.tangisuteam.tangisu.ui.theme.TangisuTheme
-import android.app.Application
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.tangisuteam.tangisu.data.repository.DummyAlarmRepositoryProvider
 import com.tangisuteam.tangisu.ui.components.PermissionHandler
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmListScreen(
-    // ViewModel is provided with a default instance using the dummy repository
-    alarmListViewModel: AlarmListViewModel = viewModel(
-        factory = AlarmListViewModelFactory(
-            application = LocalContext.current.applicationContext as Application,
-            alarmRepository = DummyAlarmRepositoryProvider.instance
-        )
-    ),
+    alarmListViewModel: AlarmListViewModel = hiltViewModel(),
     onNavigateToAddAlarm: () -> Unit,
     onNavigateToEditAlarm: (alarmId: String) -> Unit
 ) {
@@ -208,62 +200,6 @@ fun formatDaysOfWeek(days: Set<DayOfWeek>): String {
             DayOfWeek.FRIDAY -> "Fri"
             DayOfWeek.SATURDAY -> "Sat"
             DayOfWeek.SUNDAY -> "Sun"
-        }
-    }
-}
-
-@Preview
-@Composable
-fun AlarmItemPreview() {
-    TangisuTheme {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            AlarmItem(
-                alarm = Alarm(
-                    id = "1",
-                    hour = 7,
-                    minute = 30,
-                    daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
-                    isEnabled = true
-                ),
-                isSystem24HourFormat = false,
-                onEnabledChange = {},
-                onDeleteClick = {},
-                onClick = {}
-            )
-            AlarmItem(
-                alarm = Alarm(
-                    id = "2",
-                    hour = 22,
-                    minute = 0,
-                    daysOfWeek = emptySet(), // One-time
-                    isEnabled = true,
-                    label = "Read before bed"
-                ),
-                isSystem24HourFormat = true,
-                onEnabledChange = {},
-                onDeleteClick = {},
-                onClick = {}
-            )
-            AlarmItem(
-                alarm = Alarm(
-                    id = "3",
-                    hour = 14,
-                    minute = 15,
-                    challengeType = ChallengeType.MATH,
-                    daysOfWeek = setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY),
-                    isEnabled = false, // Disabled
-                    label = "Weekend Project"
-                ),
-                isSystem24HourFormat = false,
-                onEnabledChange = {},
-                onDeleteClick = {},
-                onClick = {}
-            )
         }
     }
 }

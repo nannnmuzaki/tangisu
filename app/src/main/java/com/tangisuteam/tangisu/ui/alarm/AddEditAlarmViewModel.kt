@@ -3,39 +3,36 @@ package com.tangisuteam.tangisu.ui.alarm
 import android.icu.util.Calendar
 import androidx.compose.runtime.*
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tangisuteam.tangisu.data.model.* // Import all from model
+import com.tangisuteam.tangisu.data.model.*
 import com.tangisuteam.tangisu.data.repository.AlarmRepository
-import com.tangisuteam.tangisu.data.repository.DummyAlarmRepositoryProvider // Assuming this exists
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.UUID
 import java.util.Locale
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import com.tangisuteam.tangisu.alarm.AlarmScheduler
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-// Define default values (consider moving to a companion object or constants file if widely used)
 private const val DEFAULT_HOUR = 7
 private const val DEFAULT_MINUTE = 0
 private const val DEFAULT_SNOOZE_MINUTES = 10
 
-class AddEditAlarmViewModel(
-    application: Application,
-    private val alarmRepository: AlarmRepository = DummyAlarmRepositoryProvider.instance, // Default for now
-    private val savedStateHandle: SavedStateHandle // To get alarmId if using Jetpack Navigation args
-) : AndroidViewModel(application) {
-
-    private val alarmScheduler = AlarmScheduler(application)
+@HiltViewModel
+class AddEditAlarmViewModel @Inject constructor(
+    private val alarmRepository: AlarmRepository,
+    private val alarmScheduler: AlarmScheduler,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
     // --- UI State ---
     var hour by mutableStateOf(DEFAULT_HOUR)
-        private set // Allow internal modification for time picker
+        private set
     var minute by mutableStateOf(DEFAULT_MINUTE)
-        private set // Allow internal modification for time picker
+        private set
 
     var label by mutableStateOf("")
     var isEnabled by mutableStateOf(true)
@@ -44,7 +41,6 @@ class AddEditAlarmViewModel(
     // Placeholders for features to be fully implemented later
     var ringtoneUri by mutableStateOf<String?>(null) // Or a default URI string
     var shouldVibrate by mutableStateOf(true)
-    // var vibrationPattern by mutableStateOf(VibrationPattern.INSISTENT_BUZZ) // More complex
     var snoozeDurationMinutes by mutableStateOf(DEFAULT_SNOOZE_MINUTES)
     var challengeType by mutableStateOf(ChallengeType.NONE)
     var timeFormatPreference by mutableStateOf(TimeFormatSetting.SYSTEM_DEFAULT)
@@ -60,16 +56,6 @@ class AddEditAlarmViewModel(
 
     private val _loadErrorEvent = MutableSharedFlow<String>()
     val loadErrorEvent = _loadErrorEvent.asSharedFlow() // For showing errors if alarm not found
-
-    init {
-        // Example: If alarmId is passed via SavedStateHandle from Jetpack Navigation
-        // val initialAlarmId: String? = savedStateHandle["alarmId"] // Assuming "alarmId" is the nav argument name
-        // if (initialAlarmId != null) {
-        //     loadAlarm(initialAlarmId)
-        // }
-        // For now, loadAlarm is called from LaunchedEffect in the Composable
-    }
-
 
     fun loadAlarm(alarmId: String?) {
         currentAlarmId = alarmId
@@ -110,13 +96,11 @@ class AddEditAlarmViewModel(
         snoozeDurationMinutes = DEFAULT_SNOOZE_MINUTES
         challengeType = ChallengeType.NONE
         timeFormatPreference = TimeFormatSetting.SYSTEM_DEFAULT
-        currentAlarmId = null // Ensure this is cleared
+        currentAlarmId = null
     }
 
     fun saveAlarm() {
-        // Basic validation example (can be expanded)
         if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-            // Handle invalid time input (e.g., emit an error event)
             return
         }
 
@@ -198,7 +182,7 @@ class AddEditAlarmViewModel(
     }
 
     fun onSnoozeDurationChange(newSnooze: Int) {
-        snoozeDurationMinutes = newSnooze.coerceIn(1, 60) // Example: Ensure snooze is between 1 and 60 min
+        snoozeDurationMinutes = newSnooze.coerceIn(1, 60) // Ensure snooze is between 1 and 60 min
     }
 
     fun onChallengeTypeChange(newChallengeType: ChallengeType) {

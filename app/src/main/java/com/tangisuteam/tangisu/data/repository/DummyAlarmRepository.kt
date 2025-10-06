@@ -8,15 +8,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import javax.inject.Inject
 
-// This will be replaced by a Hilt-provided singleton later
-object DummyAlarmRepositoryProvider {
-    val instance: AlarmRepository by lazy { DummyAlarmRepositoryImpl() }
-}
-
-
-// In a real app with Hilt, this would be @Singleton and @Inject constructor
-class DummyAlarmRepositoryImpl : AlarmRepository {
+class DummyAlarmRepositoryImpl @Inject constructor() : AlarmRepository {
 
     private val _alarms = MutableStateFlow<List<Alarm>>(
         // Initial dummy data

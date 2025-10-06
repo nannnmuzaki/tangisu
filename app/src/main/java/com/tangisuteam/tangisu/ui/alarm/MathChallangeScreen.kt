@@ -13,12 +13,11 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun MathChallengeScreen(
     alarmLabel: String,
-    // --- UPDATED PARAMETERS ---
     progress: Float,
     progressText: String,
     mathProblem: String,
     userAnswer: String,
-    isChallengeComplete: Boolean, // Renamed for clarity
+    isChallengeComplete: Boolean,
     onAnswerChange: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -40,12 +39,12 @@ fun MathChallengeScreen(
             )
             Spacer(Modifier.height(32.dp))
 
-            // --- NEW: Progress Indicator ---
+            // --- Progress Indicator ---
             if (!isChallengeComplete) { // Only show progress if not yet complete
                 Text(text = progressText, style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.height(8.dp))
                 LinearProgressIndicator(
-                    progress = { progress }, // Use lambda for Compose 1.7+
+                    progress = { progress },
                     modifier = Modifier
                         .fillMaxWidth(0.8f)
                         .height(8.dp)

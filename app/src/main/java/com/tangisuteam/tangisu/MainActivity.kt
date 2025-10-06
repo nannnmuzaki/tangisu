@@ -1,4 +1,4 @@
-package com.tangisuteam.tangisu // Your main package
+package com.tangisuteam.tangisu
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -19,14 +19,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.tangisuteam.tangisu.ui.alarm.AddEditAlarmScreen
 import com.tangisuteam.tangisu.ui.alarm.AlarmListScreen
-import com.tangisuteam.tangisu.ui.theme.TangisuTheme // Make sure this is correctly imported
+import com.tangisuteam.tangisu.ui.theme.TangisuTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            TangisuTheme { // Apply your app's theme
-
+            TangisuTheme {
                 // Basic navigation stub - Replace with Jetpack Navigation Compose later
                 var currentScreen by remember { mutableStateOf("list") }
                 var alarmToEditId by remember { mutableStateOf<String?>(null) }

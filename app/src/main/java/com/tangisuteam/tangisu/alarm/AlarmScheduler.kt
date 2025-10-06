@@ -7,10 +7,12 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import com.tangisuteam.tangisu.data.model.Alarm
-import com.tangisuteam.tangisu.data.model.DayOfWeek // <-- IMPORT THIS
+import com.tangisuteam.tangisu.data.model.DayOfWeek
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Calendar
+import javax.inject.Inject
 
-class AlarmScheduler(private val context: Context) {
+class AlarmScheduler @Inject constructor(@ApplicationContext private val context: Context) {
 
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
@@ -55,7 +57,6 @@ class AlarmScheduler(private val context: Context) {
     }
 
     fun cancel(alarm: Alarm) {
-        // ... (this function is correct)
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             action = "com.tangisuteam.tangisu.ALARM_TRIGGER"
         }

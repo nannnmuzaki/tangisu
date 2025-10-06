@@ -1,0 +1,20 @@
+package com.tangisuteam.tangisu.di
+
+import com.tangisuteam.tangisu.data.repository.AlarmRepository
+import com.tangisuteam.tangisu.data.repository.DummyAlarmRepositoryImpl
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class AppModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindAlarmRepository(
+        dummyAlarmRepositoryImpl: DummyAlarmRepositoryImpl
+    ): AlarmRepository
+}

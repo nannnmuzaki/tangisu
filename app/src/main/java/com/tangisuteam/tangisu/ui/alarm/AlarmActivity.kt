@@ -6,7 +6,7 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.lifecycle.ViewModelProvider
+import androidx.activity.viewModels
 import com.tangisuteam.tangisu.alarm.AlarmService
 import com.tangisuteam.tangisu.ui.theme.TangisuTheme
 import androidx.compose.foundation.layout.*
@@ -15,23 +15,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.tangisuteam.tangisu.alarm.AlarmScheduler
 import com.tangisuteam.tangisu.data.model.ChallengeType
-import com.tangisuteam.tangisu.data.repository.DummyAlarmRepositoryProvider
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class AlarmActivity : ComponentActivity() {
 
-    private lateinit var viewModel: AlarmActivityViewModel
+    private val viewModel: AlarmActivityViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // --- Create ViewModel with its dependencies ---
-        val alarmRepository = DummyAlarmRepositoryProvider.instance
-        val alarmScheduler = AlarmScheduler(applicationContext)
-        val factory = AlarmActivityViewModelFactory(alarmRepository, alarmScheduler)
-        viewModel = ViewModelProvider(this, factory)[AlarmActivityViewModel::class.java]
-        // --- End of ViewModel creation ---
 
         // These flags are crucial for showing the activity over the lock screen and turning the screen on.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {

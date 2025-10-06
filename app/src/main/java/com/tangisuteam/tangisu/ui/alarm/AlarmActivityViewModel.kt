@@ -4,14 +4,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.CreationExtras
 import com.tangisuteam.tangisu.alarm.AlarmScheduler
 import com.tangisuteam.tangisu.data.model.Alarm
 import com.tangisuteam.tangisu.data.model.ChallengeType
 import com.tangisuteam.tangisu.data.repository.AlarmRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import kotlin.random.Random
 
 // Sealed class for the type of math operation
@@ -43,7 +43,8 @@ sealed class AlarmUiState {
     data class Error(val message: String) : AlarmUiState()
 }
 
-class AlarmActivityViewModel(
+@HiltViewModel
+class AlarmActivityViewModel @Inject constructor(
     private val alarmRepository: AlarmRepository,
     private val alarmScheduler: AlarmScheduler
 ) : ViewModel() {
@@ -51,12 +52,12 @@ class AlarmActivityViewModel(
     var uiState by mutableStateOf<AlarmUiState>(AlarmUiState.Loading)
         private set
 
-    // --- NEW: State for the series of math challenges ---
+    // --- State for the series of math challenges ---
     private val problems = mutableListOf<MathProblem>()
     private var currentProblemIndex by mutableStateOf(0)
     private val totalProblems = 10 // Total number of problems to solve
 
-    // --- UPDATED: UI-facing state ---
+    // --- UI-facing state ---
     val progress: Float
         get() = if (problems.isEmpty()) 0f else (currentProblemIndex.toFloat() / totalProblems)
 
@@ -104,7 +105,7 @@ class AlarmActivityViewModel(
                     )
                 }
                 is MathOperation.Multiply -> {
-                    val num1 = Random.nextInt(2, 13) // Smaller numbers for multiplication
+                    val num1 = Random.nextInt(2, 13)
                     val num2 = Random.nextInt(2, 13)
                     MathProblem(
                         problemText = "$num1 ${operation.symbol} $num2 = ?",
@@ -158,19 +159,5 @@ class AlarmActivityViewModel(
                 alarmScheduler.cancel(updatedAlarm)
             }
         }
-    }
-}
-
-// Factory to provide dependencies to the ViewModel
-class AlarmActivityViewModelFactory(
-    private val alarmRepository: AlarmRepository,
-    private val alarmScheduler: AlarmScheduler
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-        if (modelClass.isAssignableFrom(AlarmActivityViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return AlarmActivityViewModel(alarmRepository, alarmScheduler) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
