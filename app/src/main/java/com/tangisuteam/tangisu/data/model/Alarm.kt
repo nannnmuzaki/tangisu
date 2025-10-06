@@ -1,5 +1,7 @@
 package com.tangisuteam.tangisu.data.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import java.util.UUID
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -20,8 +22,9 @@ enum class TimeFormatSetting {
     H24
 }
 
+@Entity(tableName = "alarms")
 data class Alarm(
-    val id: String = UUID.randomUUID().toString(),
+    @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val hour: Int,
     val minute: Int,
     var isEnabled: Boolean = true,

@@ -70,7 +70,6 @@ class AlarmService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP_SERVICE) {
             Log.d("AlarmService", "Stop action received. Stopping service.")
-            isStopping = true
             stopSelf()
             return START_NOT_STICKY // Don't restart a service that was explicitly stopped.
         }
@@ -120,7 +119,6 @@ class AlarmService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        isStopping = false
         hasStartedPlayback = false // Reset the flag
         Log.d("AlarmService", "Service destroyed. Stopping ringtone and vibration.")
         ringtone?.stop()
