@@ -45,7 +45,7 @@ class AlarmActivity : ComponentActivity() {
         setContent {
             TangisuTheme {
                 val onDismiss = {
-                    // 1. Perform robust dismiss logic (disable/reschedule)
+                    // 1. Perform dismiss logic (disable/reschedule)
                     viewModel.dismissAlarm()
 
                     // 2. Stop the currently playing sound/vibration
@@ -80,7 +80,7 @@ class AlarmActivity : ComponentActivity() {
                                 progressText = viewModel.progressText,
                                 mathProblem = viewModel.currentProblemText,
                                 userAnswer = viewModel.userAnswer,
-                                isChallengeComplete = viewModel.isAnswerCorrect, // This now signifies the whole challenge is done
+                                isChallengeComplete = viewModel.isAnswerCorrect,
                                 onAnswerChange = { viewModel.onUserAnswerChange(it) },
                                 onDismiss = onDismiss
                             )

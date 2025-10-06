@@ -44,7 +44,7 @@ fun DisplayTimePickerDialog(
                     text = title,
                     style = MaterialTheme.typography.labelMedium
                 )
-                TimePicker(state = timePickerState) // The actual Material 3 Time Picker
+                TimePicker(state = timePickerState)
                 Row(
                     modifier = Modifier
                         .height(40.dp)

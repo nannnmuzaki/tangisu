@@ -123,8 +123,6 @@ fun AlarmItem(
                 val challengeDisplay = when (alarm.challengeType) {
                     ChallengeType.NONE -> "" // No challenge, so empty string for the challenge part
                     ChallengeType.MATH -> "Math"
-                    // Add other cases here as you define more ChallengeType enums
-                    // e.g., ChallengeType.PUZZLE -> "Puzzle"
                     else -> alarm.challengeType.name // Fallback to the enum name if not explicitly handled
                 }
 
@@ -179,7 +177,7 @@ fun AlarmItem(
 }
 
 fun formatDaysOfWeek(days: Set<DayOfWeek>): String {
-    if (days.isEmpty()) return "One-time" // Or perhaps don't display anything for one-time
+    if (days.isEmpty()) return "One-time"
     if (days.size == 7) return "Every day"
 
     val sortedDays = days.toList().sortedBy { it.ordinal } // Sort by enum order (MON, TUE..)

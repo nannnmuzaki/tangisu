@@ -20,7 +20,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.tangisuteam.tangisu.alarm.AlarmScheduler
 
-// A simple data class to hold the state of a permission
 private data class PermissionInfo(
     val title: String,
     val rationale: String,
@@ -34,7 +33,6 @@ fun PermissionHandler(
     val context = LocalContext.current
     var permissionsState by remember { mutableStateOf<Map<String, PermissionInfo>>(emptyMap()) }
 
-    // --- FIX: Move the function definition up here ---
     val checkPermissions = remember {
         { ctx: Context, onStateUpdated: (Map<String, PermissionInfo>) -> Unit ->
             val newStates = mutableMapOf<String, PermissionInfo>()
@@ -61,7 +59,6 @@ fun PermissionHandler(
         }
     }
 
-    // Now 'checkPermissions' is a known variable, and you can call it.
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
@@ -80,7 +77,6 @@ fun PermissionHandler(
     if (allPermissionsGranted) {
         onAllPermissionsGranted()
     } else {
-        // ... The rest of your UI code remains the same
         Column(
             modifier = Modifier
                 .fillMaxSize()

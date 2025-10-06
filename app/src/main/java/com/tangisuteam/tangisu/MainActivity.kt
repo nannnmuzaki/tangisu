@@ -80,20 +80,3 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Placeholder - you will create a real AddEditAlarmScreen.kt
-@Composable
-fun AddEditAlarmScreenPlaceholder(alarmId: String?, onBackToList: () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(if (alarmId == null) "Add New Alarm Screen" else "Edit Alarm Screen for ID: $alarmId")
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onBackToList) {
-                Text("Save / Back to List")
-            }
-        }
-    }
-}
-
