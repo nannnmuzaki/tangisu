@@ -7,6 +7,8 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.Ringtone
 import android.media.RingtoneManager
 import android.os.Build
@@ -31,6 +33,7 @@ import javax.inject.Inject
 class AlarmService : Service() {
     @Inject
     lateinit var alarmRepository: AlarmRepository
+
     private val NOTIFICATION_CHANNEL_ID = "ALARM_CHANNEL"
     private val NOTIFICATION_ID = 123
 
@@ -38,8 +41,6 @@ class AlarmService : Service() {
     private var vibrator: Vibrator? = null
     private var currentAlarmId: String? = null
     private var currentAlarmLabel: String = "Time to wake up!"
-    private var isStopping = false
-    private var hasStartedPlayback = false // <-- 1. ADD THIS FLAG
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -52,12 +53,33 @@ class AlarmService : Service() {
         Log.d("AlarmService", "Service created")
         createNotificationChannel()
 
-        // Initialize Ringtone
-        val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-        ringtone = RingtoneManager.getRingtone(this, alarmUri)
-        ringtone?.isLooping = true
+        initializeRingtone()
+        initializeVibrator()
+    }
 
-        // Initialize Vibrator
+    private fun initializeRingtone() {
+        try {
+            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            ringtone = RingtoneManager.getRingtone(this, alarmUri)?.apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    isLooping = true
+                    audioAttributes = AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                } else {
+                    isLooping = true
+                    @Suppress("DEPRECATION")
+                    streamType = AudioManager.STREAM_ALARM
+                }
+            }
+            Log.d("AlarmService", "Ringtone initialized")
+        } catch (e: Exception) {
+            Log.e("AlarmService", "Error initializing ringtone", e)
+        }
+    }
+
+    private fun initializeVibrator() {
         vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vibratorManager.defaultVibrator
@@ -71,82 +93,103 @@ class AlarmService : Service() {
         if (intent?.action == ACTION_STOP_SERVICE) {
             Log.d("AlarmService", "Stop action received. Stopping service.")
             stopSelf()
-            return START_NOT_STICKY // Don't restart a service that was explicitly stopped.
+            return START_NOT_STICKY
         }
 
-        // --- 2. Extract Data ---
-        // Get the ID and Label from the incoming intent.
         val alarmId = intent?.getStringExtra("ALARM_ID") ?: currentAlarmId
         val alarmLabel = intent?.getStringExtra("ALARM_LABEL")?.ifBlank { "Time to wake up!" } ?: currentAlarmLabel
 
-        // Update the service's start, crucial for restarts.
         currentAlarmId = alarmId
         currentAlarmLabel = alarmLabel
 
         Log.d("AlarmService", "Service started. Label: '$currentAlarmLabel', ID: '$currentAlarmId'")
 
-        // --- 3. Start Foreground ---
-        // Create the notification with the most up-to-date data.
+        // Start foreground with notification
         val notification = createNotification(alarmId, alarmLabel)
         startForeground(NOTIFICATION_ID, notification)
 
-        // --- 4. Play Media ---
-        // The hasStartedPlayback flag prevents the sound from re-playing on every service restart.
-        if (!hasStartedPlayback) {
-            hasStartedPlayback = true
-            Log.d("AlarmService", "Starting media playback for the first time.")
+        // Always ensure sound and vibration are playing
+        ensureMediaPlayback(alarmId)
 
+        return START_STICKY
+    }
+
+    private fun ensureMediaPlayback(alarmId: String?) {
+        // Ensure ringtone is playing
+        try {
+            if (ringtone?.isPlaying != true) {
+                Log.d("AlarmService", "Starting/Resuming ringtone playback")
+                ringtone?.play()
+            }
+        } catch (e: Exception) {
+            Log.e("AlarmService", "Error playing ringtone", e)
+            // Try to reinitialize if it failed
+            initializeRingtone()
             ringtone?.play()
+        }
 
-            serviceScope.launch {
+        // Ensure vibration
+        serviceScope.launch {
+            try {
                 val alarm = alarmId?.let { alarmRepository.getAlarmById(it) }
                 if (alarm?.shouldVibrate == true) {
-                    Log.d("AlarmService", "Starting vibration.")
+                    // Cancel any existing vibration first
+                    vibrator?.cancel()
+
+                    Log.d("AlarmService", "Starting/Resuming vibration")
                     val vibrationEffect = VibrationEffect.createWaveform(
                         longArrayOf(0, 1000, 500),
-                        0 // Repeat
+                        0 // Repeat indefinitely
                     )
                     vibrator?.vibrate(vibrationEffect)
                 } else {
-                    Log.d("AlarmService", "Vibration is disabled for this alarm.")
+                    Log.d("AlarmService", "Vibration is disabled for this alarm")
                 }
+            } catch (e: Exception) {
+                Log.e("AlarmService", "Error with vibration", e)
             }
         }
-
-        // START_STICKY to ensure the OS tries to restart the service if it's killed.
-        return START_STICKY
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        hasStartedPlayback = false // Reset the flag
         Log.d("AlarmService", "Service destroyed. Stopping ringtone and vibration.")
-        ringtone?.stop()
+
+        try {
+            ringtone?.stop()
+        } catch (e: Exception) {
+            Log.e("AlarmService", "Error stopping ringtone", e)
+        }
+
         vibrator?.cancel()
-        serviceScope.cancel() // <-- CANCEL THE SCOPE
+
+        serviceScope.cancel()
     }
 
     private fun createNotification(alarmId: String?, alarmLabel: String): Notification {
         val fullScreenIntent = Intent(this, AlarmActivity::class.java).apply {
-            putExtra("ALARM_ID", alarmId) // Pass ID to the activity too
+            putExtra("ALARM_ID", alarmId)
             putExtra("ALARM_LABEL", alarmLabel)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val fullScreenPendingIntent = PendingIntent.getActivity(
             this,
-            1, // Request code
+            1,
             fullScreenIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // This is the PendingIntent that gets fired when the notification is swiped away
-        val deleteIntent = PendingIntent.getService(
+        // When notification is dismissed, just restart the service with same data
+        // This keeps the notification persistent without stopping the alarm
+        val deleteIntent = Intent(this, AlarmService::class.java).apply {
+            putExtra("ALARM_ID", alarmId)
+            putExtra("ALARM_LABEL", alarmLabel)
+            // NO ACTION_STOP_SERVICE - we want to keep it running
+        }
+        val deletePendingIntent = PendingIntent.getService(
             this,
-            2, // Different request code
-            Intent(this, AlarmService::class.java).apply {
-                putExtra("ALARM_ID", alarmId)
-                putExtra("ALARM_LABEL", alarmLabel)
-            },
+            2,
+            deleteIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -159,9 +202,9 @@ class AlarmService : Service() {
             .setFullScreenIntent(fullScreenPendingIntent, true)
             .setContentIntent(fullScreenPendingIntent)
             .setOngoing(true)
+            .setAutoCancel(false)
             .addAction(0, "Dismiss", fullScreenPendingIntent)
-            // This ensures that if the notification is cleared, the service attempts to restart
-            .setDeleteIntent(deleteIntent)
+            .setDeleteIntent(deletePendingIntent)
             .build()
     }
 
@@ -172,13 +215,14 @@ class AlarmService : Service() {
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             description = "Channel for Tangisu Alarms"
-            setBypassDnd(true) // Allows the alarm to sound even in Do Not Disturb
+            setBypassDnd(true)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            enableVibration(false) // We handle vibration ourselves
+            setSound(null, null) // We handle sound ourselves
         }
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)
     }
 
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
-    }
+    override fun onBind(intent: Intent?): IBinder? = null
 }
